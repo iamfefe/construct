@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>專業測驗系統</title>
+  
+  <!-- Fonts & Tailwind -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: { 
+            brand: { 50: '#f0f9ff', 100: '#e0f2fe', 300: '#7dd3fc', 500: '#0ea5e9', 600: '#0284c7', 800: '#075985' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React & SheetJS libraries -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  
+  <style>
+    body {
+      background: #f8fafc;
+      background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .option-card {
+      transition: all 0.2s ease;
+    }
+    .option-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // Fisher-Yates array shuffle (Shuffle-Proof 亂數排列核心)
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function App() {
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
+      const [allQuestions, setAllQuestions] = useState([]);
+      
+      const [quizState, setQuizState] = useState('start'); // start, playing, results
+      const [questions, setQuestions] = useState([]);
+      const [answers, setAnswers] = useState({});
+      
+      useEffect(() => {
+        loadData();
+      }, []);
+
+      const loadData = async () => {
+        try {
+          const res = await fetch('quiz.xlsx');
+          if (!res.ok) throw new Error('無法讀取 quiz.xlsx，請確認您是透過 run.bat 啟動伺服器，或檔案是否存在。');
+          const arrayBuffer = await res.arrayBuffer();
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const data = XLSX.utils.sheet_to_json(firstSheet);
+          
+          const parsedQuestions = [];
+          
+          data.forEach((row, index) => {
+            const qText = row['題目 (Question)'];
+            if (!qText) return; // 略過空白行
+            
+            // 讀取四個選項，過濾掉沒有文字的選項
+            const rawOptions = [
+              { text: row['選項A'], key: 'A' },
+              { text: row['選項B'], key: 'B' },
+              { text: row['選項C'], key: 'C' },
+              { text: row['選項D'], key: 'D' }
+            ].filter(o => o.text !== undefined && o.text !== null && String(o.text).trim() !== '');
+
+            // 解析答案（例如 "C" 或 "A,B"）
+            const answerStr = String(row['正確答案 (Answer)']).toUpperCase();
+            const correctKeys = answerStr.split(',').map(s => s.trim());
+            
+            // 判別題型
+            const typeText = String(row['題型 (Type)'] || '').trim();
+            const isMultiple = typeText.includes('複選');
+
+            // 轉換為與 ABCD 脫鉤的資料結構 (只要 isCorrect 是 true，在洗牌後依然是正確答案)
+            const options = rawOptions.map((o) => ({
+              id: Math.random().toString(36).substr(2, 9),
+              text: String(o.text),
+              isCorrect: correctKeys.includes(o.key)
+            }));
+            
+            parsedQuestions.push({
+              id: `q_${index}`,
+              text: qText,
+              isMultiple: isMultiple,
+              options: options
+            });
+          });
+          
+          setAllQuestions(parsedQuestions);
+          setLoading(false);
+        } catch (err) {
+          setError(err.message);
+          setLoading(false);
+        }
+      };
+
+      const startQuiz = () => {
+        // 先對題庫 100% 洗牌，然後抽取 20 題 (不足 20 則全取)
+        const shuffledQuestions = shuffleArray(allQuestions).slice(0, 20);
+        
+        // 針對每一題的選項進行獨立洗牌
+        const preparedQuestions = shuffledQuestions.map(q => ({
+          ...q,
+          options: shuffleArray(q.options)
+        }));
+        
+        setQuestions(preparedQuestions);
+        setAnswers({});
+        setQuizState('playing');
+        window.scrollTo(0, 0);
+      };
+
+      const handleOptionToggle = (questionId, optionId, isMultiple) => {
+        setAnswers(prev => {
+          const currentAns = prev[questionId] || [];
+          if (isMultiple) {
+            // 複選：切換勾選狀態
+            if (currentAns.includes(optionId)) {
+              return { ...prev, [questionId]: currentAns.filter(id => id !== optionId) };
+            } else {
+              return { ...prev, [questionId]: [...currentAns, optionId] };
+            }
+          } else {
+            // 單選：唯一選擇 (點擊即替換)
+            return { ...prev, [questionId]: [optionId] };
+          }
+        });
+      };
+
+      const submitQuiz = () => {
+        if (Object.keys(answers).length < questions.length) {
+          if(!window.confirm(`您目前只作答了 ${Object.keys(answers).length} 題，確定要提早交卷嗎？未作答題目將以 0 分計算。`)) {
+            return;
+          }
+        }
+        setQuizState('results');
+        window.scrollTo(0, 0);
+      };
+
+      if (loading) return (
+        <div className="flex h-screen items-center justify-center">
+          <div className="text-xl font-semibold text-slate-500 animate-pulse flex items-center gap-3">
+             <svg className="animate-spin h-6 w-6 text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+             正在讀取測驗題庫...
+          </div>
+        </div>
+      );
+
+      if (error) return (
+        <div className="flex h-screen items-center justify-center p-4">
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 p-8 rounded-2xl max-w-lg shadow font-medium text-center">
+            <h2 className="text-3xl font-bold mb-4 text-rose-600">系統錯誤</h2>
+            <p className="text-lg leading-relaxed">{error}</p>
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="min-h-screen text-slate-800 pb-20 font-sans">
+          {/* Start Screen */}
+          {quizState === 'start' && (
+            <div className="pt-24 px-4 max-w-3xl mx-auto text-center">
+              <div className="glass p-12 rounded-[2rem] shadow-xl">
+                <div className="w-20 h-20 bg-brand-100 text-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-inner">
+                   <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                </div>
+                <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">隨機測驗系統</h1>
+                <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+                  系統已讀取 <span className="font-bold text-slate-800">{allQuestions.length}</span> 題題庫。<br/>
+                  本次測驗將隨機抽取 <span className="font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded">20 題</span>。<br/>
+                  滿分 100 分 (每題 5 分)，複選題必須全對才給分，漏選多選皆為 0 分。
+                </p>
+                <button 
+                  onClick={startQuiz}
+                  className="bg-brand-600 hover:bg-brand-500 text-white text-xl font-bold py-4 px-12 rounded-full shadow-lg transition transform hover:scale-105 active:scale-95"
+                >
+                  開始測驗
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Playing Screen */}
+          {quizState === 'playing' && (
+            <div className="max-w-4xl mx-auto px-4 pt-8">
+              {/* Sticky Header Progress */}
+              <div className="flex items-center justify-between mb-8 sticky top-4 glass z-20 py-4 px-6 rounded-[1.5rem] border border-slate-200 shadow-sm backdrop-blur-xl">
+                <h2 className="text-2xl font-bold text-slate-800 tracking-tight">測驗進行中</h2>
+                <div className="flex items-center gap-3">
+                  <div className="w-32 h-2 bg-slate-200 rounded-full overflow-hidden">
+                     <div className="h-full bg-brand-500 rounded-full transition-all duration-300" style={{ width: `${(Object.keys(answers).length / questions.length) * 100}%` }}></div>
+                  </div>
+                  <div className="text-brand-700 font-bold text-lg w-16 text-right">
+                    {Object.keys(answers).length} <span className="text-slate-400 font-medium">/ {questions.length}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Questions List */}
+              <div className="space-y-8">
+                {questions.map((q, index) => {
+                  const selectedIds = answers[q.id] || [];
+                  return (
+                    <div key={q.id} className="glass p-8 rounded-3xl shadow-sm border border-slate-200">
+                      <div className="flex items-start gap-4 mb-8">
+                        <span className="flex-shrink-0 w-12 h-12 bg-slate-100 text-slate-700 font-black flex items-center justify-center rounded-2xl text-xl shadow-inner border border-slate-200">
+                          {index + 1}
+                        </span>
+                        <div className="pt-1">
+                          <h3 className="text-xl font-semibold leading-relaxed text-slate-900 mb-2">{q.text}</h3>
+                          {q.isMultiple ? (
+                            <span className="inline-flex items-center px-3 py-1 bg-amber-100 text-amber-700 text-sm font-semibold rounded-lg shadow-sm">
+                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                               複選題
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-3 py-1 bg-slate-100 text-slate-500 text-sm font-semibold rounded-lg shadow-sm">
+                               單選題
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3 md:pl-16">
+                        {q.options.map(opt => {
+                          const isSelected = selectedIds.includes(opt.id);
+                          return (
+                            <label 
+                              key={opt.id} 
+                              className={`option-card flex items-center p-4 rounded-xl cursor-pointer border-2 transition-all duration-200
+                                ${isSelected ? 'border-brand-500 bg-brand-50 shadow-md' : 'border-slate-200 bg-white hover:border-brand-300 hover:bg-slate-50'}`}
+                            >
+                              <div className="relative flex items-center justify-center mr-4 w-6 h-6">
+                                <input 
+                                  type={q.isMultiple ? 'checkbox' : 'radio'}
+                                  name={`question-${q.id}`}
+                                  checked={isSelected}
+                                  onChange={() => handleOptionToggle(q.id, opt.id, q.isMultiple)}
+                                  className={`w-6 h-6 text-brand-600 focus:ring-brand-500 cursor-pointer ${q.isMultiple ? 'rounded' : ''}`}
+                                />
+                              </div>
+                              <span className={`text-lg transition-colors ${isSelected ? 'text-brand-900 font-medium' : 'text-slate-700'}`}>
+                                {opt.text}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Submit Area */}
+              <div className="mt-16 text-center">
+                <button 
+                  onClick={submitQuiz}
+                  className="bg-slate-900 hover:bg-slate-800 text-white text-xl font-bold py-5 px-16 rounded-full shadow-2xl transition transform hover:scale-105 active:scale-95"
+                >
+                  確認並提交答案
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Results Screen */}
+          {quizState === 'results' && (() => {
+            let score = 0;
+            const pointsPerQuestion = 100 / questions.length;
+            
+            const results = questions.map(q => {
+              const selectedIds = answers[q.id] || [];
+              const correctIds = q.options.filter(o => o.isCorrect).map(o => o.id);
+              
+              // 計分演算法：長度相同且包含了所有正確的 ID
+              const isCorrect = selectedIds.length === correctIds.length &&
+                                correctIds.every(id => selectedIds.includes(id));
+              
+              if(isCorrect) score += pointsPerQuestion;
+              
+              return { ...q, selectedIds, correctIds, isCorrect };
+            });
+
+            const renderMathRound = Math.round(score);
+            const isPassing = renderMathRound >= 60;
+
+            return (
+              <div className="max-w-4xl mx-auto px-4 pt-12 space-y-12 pb-32">
+                <div className="glass p-12 rounded-[2.5rem] text-center shadow-xl border border-slate-200 relative overflow-hidden">
+                  <div className={`absolute top-0 left-0 w-full h-3 ${isPassing ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                  <h1 className="text-4xl font-extrabold mb-4 text-slate-900 tracking-tight">測驗成績表</h1>
+                  <div className={`text-[8rem] font-black leading-none mb-6 ${isPassing ? 'text-emerald-500' : 'text-rose-500'} tracking-tighter`}>
+                    {renderMathRound} <span className="text-4xl font-bold tracking-normal align-top">分</span>
+                  </div>
+                  <p className="text-xl text-slate-600 font-medium bg-slate-50 inline-block px-6 py-3 rounded-full">
+                    本次測驗共 {questions.length} 題，您精確答對了 <strong className="text-slate-900">{results.filter(r => r.isCorrect).length}</strong> 題。
+                  </p>
+                  <div className="mt-10">
+                     <button onClick={() => setQuizState('start')} className="px-10 py-4 bg-slate-900 text-white rounded-full font-bold text-lg hover:bg-slate-800 transition shadow-lg transform hover:-translate-y-1">
+                       重新測驗 (重新洗牌)
+                     </button>
+                  </div>
+                </div>
+
+                <div className="space-y-6 pt-4">
+                  <h2 className="text-3xl font-extrabold mb-6 text-slate-800 flex items-center gap-3">
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                     詳細試卷檢討
+                  </h2>
+                  
+                  {results.map((r, index) => (
+                    <div key={r.id} className={`glass p-8 rounded-3xl shadow-sm border-l-8 ${r.isCorrect ? 'border-l-emerald-500' : 'border-l-rose-500'}`}>
+                      <div className="flex items-start gap-4 mb-6">
+                        <div className="pt-1">
+                          <span className={`inline-flex items-center justify-center px-4 py-1 text-sm font-bold rounded-lg shadow-sm mb-2 ${r.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                            {r.isCorrect ? '答對' : '答錯'}
+                          </span>
+                          <h3 className="text-xl font-bold text-slate-800 leading-relaxed">
+                            <span className="text-slate-400 mr-2">{index + 1}.</span> 
+                            {r.text}
+                          </h3>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3 md:pl-16">
+                        {r.options.map(opt => {
+                          const isSelected = r.selectedIds.includes(opt.id);
+                          const isActuallyCorrect = opt.isCorrect;
+                          
+                          let bgClass = "bg-slate-50 border-slate-200 text-slate-500";
+                          let icon = "";
+                          
+                          // 分析狀態
+                          if (isSelected && isActuallyCorrect) {
+                            bgClass = "bg-emerald-50 border-emerald-300 text-emerald-800 font-bold shadow-sm";
+                            icon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+                          } else if (isSelected && !isActuallyCorrect) {
+                            bgClass = "bg-rose-50 border-rose-300 text-rose-800 font-bold shadow-sm";
+                            icon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
+                          } else if (!isSelected && isActuallyCorrect) {
+                            // 漏選的正確答案
+                            bgClass = "bg-emerald-50 border-emerald-300 text-emerald-800 font-bold shadow-sm opacity-90 border-dashed border-2";
+                            icon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+                          }
+
+                          return (
+                            <div key={opt.id} className={`px-5 py-4 rounded-xl border-2 flex justify-between items-center transition-all ${bgClass}`}>
+                               <span className="text-lg">{opt.text}</span>
+                               {icon && <span className="flex-shrink-0 ml-4" dangerouslySetInnerHTML={{__html: icon}}></span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

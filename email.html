@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>免費諮詢 | 建築工程設計</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-color: #d4af37; /* 建築質感的金色 */
+        --primary-hover: #b5952f;
+        --bg-color: #0a0a0a;
+        --surface-color: #1a1a1a;
+        --text-color: #ffffff;
+        --text-muted: #a0a0a0;
+        --border-color: rgba(255, 255, 255, 0.1);
+        --error-color: #cf6679;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Noto Sans TC", sans-serif;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* 現代感的背景網格與漸層 */
+        background-image:
+          radial-gradient(
+            circle at 15% 50%,
+            rgba(212, 175, 55, 0.05),
+            transparent 25%
+          ),
+          radial-gradient(
+            circle at 85% 30%,
+            rgba(255, 255, 255, 0.02),
+            transparent 25%
+          ),
+          linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size:
+          100% 100%,
+          100% 100%,
+          30px 30px,
+          30px 30px;
+        padding: 2rem;
+      }
+
+      .form-container {
+        background: rgba(26, 26, 26, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border-color);
+        padding: 3rem;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 650px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        animation: slideUp 0.6s ease-out;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .form-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+      }
+
+      .form-header h2 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 0.8rem;
+        letter-spacing: 2px;
+        position: relative;
+        display: inline-block;
+      }
+
+      .form-header h2::after {
+        content: "";
+        position: absolute;
+        width: 40px;
+        height: 3px;
+        background: var(--primary-color);
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 2px;
+      }
+
+      .form-header p {
+        color: var(--text-muted);
+        font-size: 1rem;
+        margin-top: 1.5rem;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+        position: relative;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.6rem;
+        font-size: 0.95rem;
+        color: var(--text-color);
+        font-weight: 500;
+        transition: color 0.3s ease;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 1rem 1.2rem;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--text-color);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      input::placeholder,
+      textarea::placeholder {
+        color: rgba(255, 255, 255, 0.2);
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        background: rgba(0, 0, 0, 0.5);
+        box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+      }
+
+      input:focus + label,
+      select:focus + label,
+      textarea:focus + label {
+        color: var(--primary-color);
+      }
+
+      select {
+        appearance: none;
+        cursor: pointer;
+      }
+
+      .select-wrapper {
+        position: relative;
+      }
+
+      .select-wrapper::after {
+        content: "▼";
+        position: absolute;
+        right: 1.2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+      }
+
+      option {
+        background-color: #1a1a1a;
+        color: var(--text-color);
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 140px;
+      }
+
+      .submit-btn {
+        width: 100%;
+        padding: 1.2rem;
+        background: var(--primary-color);
+        color: #000;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: 1px;
+      }
+
+      .submit-btn:hover {
+        background: var(--primary-hover);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px -10px var(--primary-color);
+      }
+
+      .submit-btn:active {
+        transform: translateY(0);
+      }
+
+      /* Loading Spinner */
+      .spinner {
+        display: none;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        border-top-color: #000;
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .status-message {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+        font-weight: 500;
+        display: none;
+        animation: fadeIn 0.4s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .status-message.success {
+        display: block;
+        background: rgba(46, 125, 50, 0.15);
+        color: #81c784;
+        border: 1px solid rgba(46, 125, 50, 0.3);
+      }
+
+      .status-message.error {
+        display: block;
+        background: rgba(207, 102, 121, 0.15);
+        color: var(--error-color);
+        border: 1px solid rgba(207, 102, 121, 0.3);
+      }
+
+      @media (max-width: 600px) {
+        .form-row {
+          grid-template-columns: 1fr;
+          gap: 0;
+        }
+        .form-container {
+          padding: 2rem;
+        }
+      }
+    </style>
+
+    <!-- EmailJS SDK -->
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
+    ></script>
+    <script type="text/javascript">
+      // 1. 初始化 EmailJS (請將此處替換為您的 EmailJS Public Key)
+      (function () {
+        emailjs.init({
+          publicKey: "SkeFU28AuV1KI8ltR",
+        });
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="form-container">
+      <div class="form-header">
+        <h2>建築工程諮詢</h2>
+        <p>請填寫下方表單描述您的需求，我們的專業團隊會盡快與您聯繫</p>
+      </div>
+
+      <form id="contact-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="user_name">姓名 / 公司名稱</label>
+            <input
+              type="text"
+              id="user_name"
+              name="user_name"
+              placeholder="請輸入姓名或公司"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="user_phone">聯絡電話</label>
+            <input
+              type="tel"
+              id="user_phone"
+              name="user_phone"
+              placeholder="例如: 0912-345-678"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="user_email">電子信箱</label>
+          <input
+            type="email"
+            id="user_email"
+            name="user_email"
+            placeholder="example@domain.com"
+            required
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="area_size">預估坪數 (坪)</label>
+            <input
+              type="number"
+              id="area_size"
+              name="area_size"
+              placeholder="例如: 50"
+              min="1"
+            />
+          </div>
+          <div class="form-group">
+            <label for="city">案場縣市</label>
+            <div class="select-wrapper">
+              <select id="city" name="city" required>
+                <option value="" disabled selected>請選擇縣市</option>
+                <option value="基隆市">基隆市</option>
+                <option value="台北市">台北市</option>
+                <option value="新北市">新北市</option>
+                <option value="桃園市">桃園市</option>
+                <option value="新竹市">新竹市</option>
+                <option value="新竹縣">新竹縣</option>
+                <option value="苗栗縣">苗栗縣</option>
+                <option value="台中市">台中市</option>
+                <option value="彰化縣">彰化縣</option>
+                <option value="南投縣">南投縣</option>
+                <option value="雲林縣">雲林縣</option>
+                <option value="嘉義市">嘉義市</option>
+                <option value="嘉義縣">嘉義縣</option>
+                <option value="台南市">台南市</option>
+                <option value="高雄市">高雄市</option>
+                <option value="屏東縣">屏東縣</option>
+                <option value="宜蘭縣">宜蘭縣</option>
+                <option value="花蓮縣">花蓮縣</option>
+                <option value="台東縣">台東縣</option>
+                <option value="外島地區">外島地區</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="message">需求說明與訊息</label>
+          <textarea
+            id="message"
+            name="message"
+            placeholder="請簡述您的需求（例如：自地自建、老屋翻新、廠房興建、室內裝修等細節...）"
+            required
+          ></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submit-btn">
+          <span>送出諮詢表單</span>
+          <div class="spinner" id="spinner"></div>
+        </button>
+
+        <div id="status-message" class="status-message"></div>
+      </form>
+    </div>
+
+    <script>
+      document
+        .getElementById("contact-form")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+
+          const btn = document.getElementById("submit-btn");
+          const spinner = document.getElementById("spinner");
+          const btnText = btn.querySelector("span");
+          const statusMessage = document.getElementById("status-message");
+
+          // 顯示載入中狀態
+          btn.disabled = true;
+          btnText.textContent = "信件傳送中...";
+          spinner.style.display = "block";
+          statusMessage.className = "status-message";
+          statusMessage.style.display = "none";
+
+          // 2. 設置 Service ID 和 Template ID (請替換為您在 EmailJS 上設定的 ID)
+          const serviceID = "service_qmxo1wy";
+          const templateID = "template_z7nyl8h";
+
+          // 3. 呼叫 EmailJS API 傳送表單 (第四個參數為表單元素 'this')
+          emailjs.sendForm(serviceID, templateID, this).then(
+            () => {
+              btn.disabled = false;
+              btnText.textContent = "送出諮詢表單";
+              spinner.style.display = "none";
+
+              statusMessage.innerHTML =
+                "✅ <strong>感謝您的來信！</strong><br>我們已收到您的諮詢需求，將會盡快與您聯絡。";
+              statusMessage.className = "status-message success";
+
+              // 傳送成功後清空表單
+              document.getElementById("contact-form").reset();
+            },
+            (err) => {
+              btn.disabled = false;
+              btnText.textContent = "送出諮詢表單";
+              spinner.style.display = "none";
+
+              statusMessage.innerHTML =
+                "❌ <strong>傳送失敗</strong><br>請稍後再試，或確認您的 EmailJS 設定是否正確配置。";
+              statusMessage.className = "status-message error";
+              console.error("EmailJS 錯誤:", err);
+            },
+          );
+        });
+    </script>
+  </body>
+</html>
