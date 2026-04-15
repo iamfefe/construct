@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>線上預約表單</title>
+
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@400;600;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                        en: ['"Outfit"', 'sans-serif']
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f4f6f8',
+                            100: '#e2e7ec',
+                            300: '#b0bccc',
+                            500: '#64748b',
+                            600: '#475569',
+                            800: '#1e293b',
+                            900: '#0f172a'
+                        },
+                        accent: {
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f172a;
+            background-image:
+                radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+            background-attachment: fixed;
+            background-size: cover;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .input-field {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .input-field::placeholder {
+            color: #94a3b8;
+        }
+
+        /* 隱藏數字輸入框上下箭頭 */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+            transition: all 0.3s ease;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px rgba(37, 99, 235, 0.7);
+        }
+
+        .btn-gradient:active {
+            transform: translateY(0);
+        }
+
+        .btn-gradient:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center p-4 md:p-8">
+
+    <div class="glass-panel w-full max-w-2xl rounded-3xl p-8 md:p-12 relative overflow-hidden">
+
+        <!-- 裝飾用光暈 -->
+        <div
+            class="absolute -top-24 -right-24 w-48 h-48 bg-accent-500 rounded-full mix-blend-screen filter blur-[80px] opacity-70">
+        </div>
+        <div
+            class="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-600 rounded-full mix-blend-screen filter blur-[80px] opacity-50">
+        </div>
+
+        <div class="relative z-10">
+            <div class="mb-10 text-center">
+                <h1 class="text-3xl md:text-4xl font-bold mb-4 tracking-tight" style="color: #ecc94b;">
+                    建築工程諮詢
+                    <div class="w-12 h-1 bg-yellow-500 mx-auto mt-2"></div>
+                </h1>
+                <p class="text-slate-400">請填寫下方表單描述您的需求，我們的專業團隊會盡快與您聯繫</p>
+            </div>
+
+            <form id="bookingForm" class="space-y-6">
+                <!-- Row 1: Name & Tel -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-slate-300 mb-2">姓名 / 公司名稱</label>
+                        <!-- name="name" 將成為 Apps Script 收到的參數名 -->
+                        <input type="text" id="name" name="name" required placeholder="請輸入姓名或公司"
+                            class="input-field w-full rounded-xl px-4 py-3 text-base">
+                    </div>
+                    <div>
+                        <label for="tel" class="block text-sm font-medium text-slate-300 mb-2">聯絡電話</label>
+                        <input type="tel" id="tel" name="tel" required placeholder="例如：0912-345-678"
+                            class="input-field w-full rounded-xl px-4 py-3 text-base">
+                    </div>
+                </div>
+
+                <!-- Row 2: Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-slate-300 mb-2">電子信箱</label>
+                    <input type="email" id="email" name="email" required placeholder="example@domain.com"
+                        class="input-field w-full rounded-xl px-4 py-3 text-base">
+                </div>
+
+                <!-- Row 3: Num & City -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="num" class="block text-sm font-medium text-slate-300 mb-2">預估坪數 (坪)</label>
+                        <input type="number" id="num" name="num" min="1" required placeholder="例如： 50"
+                            class="input-field w-full rounded-xl px-4 py-3 text-base">
+                    </div>
+                    <div>
+                        <label for="city" class="block text-sm font-medium text-slate-300 mb-2">案場縣市</label>
+                        <select id="city" name="city"
+                            class="input-field w-full rounded-xl px-4 py-3 text-base appearance-none cursor-pointer">
+                            <option value="" disabled selected hidden>請選擇縣市</option>
+                            <option value="台北市">台北市</option>
+                            <option value="新北市">新北市</option>
+                            <option value="桃園市">桃園市</option>
+                            <option value="台中市">台中市</option>
+                            <option value="台南市">台南市</option>
+                            <option value="高雄市">高雄市</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 4: Detail -->
+                <div>
+                    <label for="detail" class="block text-sm font-medium text-slate-300 mb-2">需求說明與訊息</label>
+                    <textarea id="detail" name="detail" rows="4" placeholder="請簡述您的需求 (例如：自地自建、老屋翻新、廠房興建、室內裝修等細節...)"
+                        class="input-field w-full rounded-xl px-4 py-3 text-base resize-none"></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-4 mt-8 border-t border-slate-700">
+                    <button type="submit" id="submitBtn"
+                        style="background-color: #ecc94b; color: #1a202c;"
+                        class="w-full font-bold text-lg rounded-xl px-6 py-4 flex items-center justify-center gap-2 hover:opacity-90 transition shadow-lg">
+                        送出諮詢表單
+                    </button>
+                    <p class="text-xs text-slate-500 text-center mt-3">
+                        將透過 EmailJS 自動派發郵件至您的信箱
+                    </p>
+                </div>
+            </form>
+
+            <!-- Success Message (Hidden by default) -->
+            <div id="successMsg"
+                class="hidden mt-6 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 px-6 py-4 rounded-xl flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>預約成功！已通報並寄送郵件至您的信箱。</span>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMsg"
+                class="hidden mt-6 bg-rose-500/20 border border-rose-500/30 text-rose-300 px-6 py-4 rounded-xl items-center gap-3">
+                <span>傳送失敗，請稍後再試或確認 EmailJS 金鑰設定。</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+    <!-- Script to handle form EmailJS -->
+    <script>
+        /*
+         * ===============================================
+         * 必填設定：請前往 EmailJS (https://www.emailjs.com/) 註冊並取得以下金鑰
+         * ===============================================
+         */
+        const EMAILJS_PUBLIC_KEY = 'SkeFU28AuV1KI8ltR';
+        const EMAILJS_SERVICE_ID = 'service_qmxo1wy';
+        const EMAILJS_TEMPLATE_ID = 'template_z7nyl8h';
+
+        // 初始化 EmailJS
+        if (!EMAILJS_PUBLIC_KEY.includes('請填入')) {
+            emailjs.init(EMAILJS_PUBLIC_KEY);
+        }
+
+        const form = document.getElementById('bookingForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const successMsg = document.getElementById('successMsg');
+        const errorMsg = document.getElementById('errorMsg');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // 防呆提醒
+            if (EMAILJS_PUBLIC_KEY.includes('請填入') || EMAILJS_SERVICE_ID.includes('請填入')) {
+                alert('【設定未完成】請先將 EmailJS 的金鑰填入 feedback.html 下方的設定區塊！');
+                return;
+            }
+
+            // UI 狀態切換
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                傳送中...
+            `;
+            successMsg.classList.add('hidden');
+            errorMsg.classList.add('hidden');
+
+            // 呼叫 EmailJS 發送表單
+            // 注意：表單中的 input name (例如 name="name", name="email") 必須跟你在 EmailJS 範本設定的變數 {{name}}, {{email}} 一模一樣
+            emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, this)
+                .then(() => {
+                    successMsg.classList.remove('hidden');
+                    form.reset();
+                }, (error) => {
+                    console.error('Error!', error);
+                    errorMsg.classList.remove('hidden');
+                })
+                .finally(() => {
+                    // 恢復按鈕狀態
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    確認送出並寄送預約通知
+                `;
+                });
+        });
+    </script>
+</body>
+
+</html>
